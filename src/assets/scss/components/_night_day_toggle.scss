@@ -1,0 +1,242 @@
+/* ==========================================================================
+   VARIBLES
+   ========================================================================== */
+
+
+/* General size for scaling
+   ========================================================================== */
+$size: 20rem;
+
+
+/* Colors
+   ========================================================================== */
+$sun: #fff;
+$moon: #b8c0c9;
+$night: #01092e;
+$evening: #02135c;
+$dawn: #fff7c6;
+$day: #3397c2;
+$sunset: #ed9632;
+$ground: #239f5f;
+
+/* Shaders
+   ========================================================================== */
+$shadow: rgba(0, 0, 0, .75);
+$glare: rgba(255, 255, 255, .5);
+
+
+/* Sky gradient
+   ========================================================================== */
+$gradient: linear-gradient(
+  to bottom, 
+  $night,     // Position 0
+  $evening, 
+  $day,       // Position 2
+  $dawn, 
+  $sunset,
+  $night,     // Position 5
+  $evening, 
+  $day,       // Position 7
+  $dawn
+);
+
+/* Transition time
+   ========================================================================== */
+$transition-time: 2s;
+
+
+
+
+/* ==========================================================================
+   BACKGROUND POSITIONER
+   Shorthand mixin to set background gradient to a specific position
+   corresponding to the Positions in var $gradient
+   ========================================================================== */
+@mixin background-position($position) {
+  background-position: 0 ( $size * $position ) * - 1;
+}
+
+
+
+
+
+/* ==========================================================================
+   ==========================================================================
+   ========================================================================== */
+.night-day-toggle {
+  margin: 3rem;
+
+  /* Outer circle
+     Represents the entire circle defining the clickable area
+     ========================================================================== */
+  label {
+    display: block;
+    width: $size;
+    height: $size;
+    margin: 0;
+    border-radius: $size / 2;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+
+    // The overall background size is 8x the size of the entire circle
+    // since there are 8 color stops in the gradient.
+    // Only 1/8 of the full gradient is visible at any position.
+    background-image: $gradient;
+    background-size: $size * 8;
+    
+
+    /* Earth
+       ========================================================================== */
+    &::before {
+      content: '';
+      display: block;
+      position: relative;
+      z-index: 2;
+      width: $size;
+      height: $size;
+      margin-top: ( $size / 3 ) * 2;
+      border-radius: $size / 2;
+      transition: box-shadow $transition-time;
+      background-color: $ground;
+    }
+  }
+
+
+  /* The input element is not visible
+     Its only purpose is to control the state of the toggle
+     ========================================================================== */
+  input {
+    display: none;
+
+    
+
+
+
+    /* ==========================================================================
+       NIGHTTIME STATE
+       ========================================================================== */
+    + label {
+      @include background-position(5);
+
+      // Transition from day to night
+      // We use a transition rather than an animation so it does not trigger immediately when the page loads
+      transition: background-position $transition-time;
+
+      
+      /* Shade the earth at night
+         ========================================================================== */
+      &::before {
+        box-shadow: inset 0 0 $size / 2 $size / 4 $shadow;
+      }
+
+      span {
+        
+        /* The Moon
+           ========================================================================== */
+        &::before {
+          content: '';
+          display: block;
+          position: absolute;
+          left: $size / 4;
+          top: $size / 4;
+          width: $size / 4;
+          height: $size / 4;
+          border-radius: $size / 8;
+          transition: opacity $transition-time, left $transition-time, top $transition-time;
+
+          // The moon's background color is actually the shadow
+          background: $night;
+
+          // Bright side of the moon
+          box-shadow: inset (.5rem * - 1) (.5rem * - 1) 0 $moon;
+        }
+
+        
+        /* The Sun
+           ========================================================================== */
+        &::after {
+          content: '';
+          display: block;
+          position: absolute;
+          left: $size / 2;
+          top: $size;
+          z-index: 1;
+          width: $size / 4;
+          height: $size / 4;
+          border-radius: $size / 8;
+          transition: 
+          left $transition-time,
+          top $transition-time,
+          box-shadow $transition-time,
+          background-color $transition-time;
+          
+          // Sun is set behind the earth by default, so its colored slightly yellow
+          background: $dawn;
+          box-shadow:  0 0 2rem $dawn;
+        }
+      }
+    }
+    
+
+    
+
+    /* ==========================================================================
+       DAYTIME STATE
+       ========================================================================== */
+    &:checked + label {
+      @include background-position(2)
+      transition: none;
+
+      // This is a combination of 2 animations...
+      // "jump" instantaneously moves the gradient from identical positions 5 to 0
+      // This allows us to cycle to day, without crossing through sunset
+      animation: jump 0s linear 0s 1, to-day $transition-time linear 0s 1;
+
+      &::before {
+        box-shadow: inset 0 0 $size / 2 $size / 4 $glare;
+      }
+
+      span {
+        
+        /* Hide the moon
+           ========================================================================== */
+        &::before {
+          opacity: 0;
+          top: ( $size / 4 ) * - 1;
+        }
+
+        
+        /* Sun rises
+           ========================================================================== */
+        &::after {
+          top: $size / 4;
+          background: $sun;
+          box-shadow:  0 0 2rem $sun;
+        }
+      }
+    }
+  }
+}
+
+
+
+
+/* ==========================================================================
+   KEYFRAME ANIMATIONS
+   ========================================================================== */
+
+/* Cycle to day
+   ========================================================================== */
+@keyframes to-day {
+  from { background-position: 0 0; }
+  to { @include background-position(2); }
+}
+
+/* Jump from identical gradient positions 5 to 0
+   ========================================================================== */
+@keyframes jump {
+  from { @include background-position(5); }
+  to { background-position: 0 0; }
+}
