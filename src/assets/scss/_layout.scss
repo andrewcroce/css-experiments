@@ -1,0 +1,10 @@
+.off-canvas-wrapper {
+  height: 100%;
+  .off-canvas-wrapper-inner {
+    height: 100%;
+    .off-canvas {
+      z-index: 2;
+      background: none;
+    }
+  }
+}
